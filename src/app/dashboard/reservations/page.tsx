@@ -20,25 +20,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Info, Pencil, Trash2, Plus, ArrowUpDown } from "lucide-react";
+import {
+  Info,
+  Pencil,
+  Trash2,
+  Plus,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "sonner";
-import { Reservation } from "@/lib/types/reservationType";
-import { getReservations } from "@/actions/reservations";
-
-const reservationSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  mobile: z
-    .string()
-    .regex(/^\+639\d{9}$/, "Mobile number must be in format: +639XXXXXXXXX"),
-  location: z.string().min(1, "Location is required"),
-  package: z.string().optional(),
-  notes: z.string().optional(),
-  pax: z.number(),
-  reservationDate: z.string().min(1, "Date is required"),
-  amountDue: z.number().min(0, "Amount must be positive"),
-});
-
-type ReservationForm = z.infer<typeof reservationSchema>;
+import {
+  reservationSchema,
+  type Reservation,
+  type ReservationForm,
+} from "@/lib/types/reservationType";
+import {
+  getReservations,
+  addReservation,
+  updateReservation,
+  deleteReservation,
+} from "@/actions/reservations";
 
 export default function Reservations() {
   const [searchName, setSearchName] = useState("");
@@ -52,6 +54,8 @@ export default function Reservations() {
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const {
     register,
@@ -61,31 +65,81 @@ export default function Reservations() {
   } = useForm<ReservationForm>({
     resolver: zodResolver(reservationSchema),
   });
+
   useEffect(() => {
-    async function fetchReservation() {
-      const { data, error } = await getReservations();
-      if (error) return;
-      setReservations(data);
+    fetchReservations();
+  }, []); // Removed currentPage dependency
+
+  async function fetchReservations() {
+    const { data, count, error } = await getReservations(currentPage);
+    if (error) {
+      toast.error("Failed to fetch reservations");
+      return;
     }
-    fetchReservation();
-  }, []);
+    setReservations(data);
+    if (count === null) return;
+    setTotalPages(Math.ceil(count / 10));
+  }
+
   const onSubmit = async (data: ReservationForm) => {
-    console.log(data);
     try {
-      toast.success("Reservation added successfully");
-      setShowEditDialog(false);
-      setShowAddDialog(false);
-      reset();
+      const reservationData = {
+        ...data,
+        type: "Walk-in",
+      };
+      const { success, reservation, error } = await addReservation(
+        reservationData
+      );
+      if (success && reservation) {
+        setReservations((prev) => [reservation, ...prev.slice(0, 9)]);
+        toast.success("Reservation added successfully");
+        setShowAddDialog(false);
+        reset();
+        fetchReservations();
+      } else {
+        toast.error(`Failed to save reservation: ${error}`);
+      }
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast.error("Failed to save reservation");
     }
   };
 
-  const handleDelete = (reservationId: number) => {
-    setReservations((prev) => prev.filter((r) => r.id !== reservationId));
-    setShowDeleteDialog(false);
-    toast.success("Reservation deleted successfully");
+  const handleDelete = async (reservationId: number) => {
+    const { success, error } = await deleteReservation(reservationId);
+    if (success) {
+      setReservations((prev) => prev.filter((r) => r.id !== reservationId));
+      setShowDeleteDialog(false);
+      toast.success("Reservation deleted successfully");
+      fetchReservations();
+    } else {
+      toast.error(`Failed to delete reservation: ${error}`);
+    }
+  };
+
+  const handleUpdate = async (data: ReservationForm) => {
+    if (!selectedReservation) return;
+
+    try {
+      const { success, reservation, error } = await updateReservation(
+        selectedReservation.id,
+        data
+      );
+      if (success && reservation) {
+        setReservations((prev) =>
+          prev.map((r) => (r.id === selectedReservation.id ? reservation : r))
+        );
+        toast.success("Reservation updated successfully");
+        setShowEditDialog(false);
+        reset();
+        fetchReservations();
+      } else {
+        toast.error(`Failed to update reservation: ${error}`);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update reservation");
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -110,121 +164,160 @@ export default function Reservations() {
       return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
     });
 
-  const ReservationDialog = ({ isEdit = false }) => (
-    <Dialog
-      open={isEdit ? showEditDialog : showAddDialog}
-      onOpenChange={isEdit ? setShowEditDialog : setShowAddDialog}
-    >
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Edit Reservation" : "Add New Reservation"}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Name</label>
-              <Input
-                {...register("name")}
-                defaultValue={selectedReservation?.name}
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name.message}</p>
-              )}
+  const ReservationDialog = ({ isEdit = false }) => {
+    const today = new Date().toISOString().split("T")[0];
+    return (
+      <Dialog
+        open={isEdit ? showEditDialog : showAddDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            reset();
+          }
+          isEdit ? setShowEditDialog(open) : setShowAddDialog(open);
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {isEdit ? "Edit Reservation" : "Add New Reservation"}
+            </DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={handleSubmit(isEdit ? handleUpdate : onSubmit)}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Name</label>
+                <Input
+                  {...register("name")}
+                  defaultValue={selectedReservation?.name}
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Mobile</label>
+                <Input
+                  {...register("mobile_number")}
+                  defaultValue={selectedReservation?.mobile_number || "+639"}
+                  placeholder="+639XXXXXXXXX"
+                />
+                {errors.mobile_number && (
+                  <p className="text-sm text-red-500">
+                    {errors.mobile_number.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Location</label>
+                <Input
+                  {...register("location")}
+                  defaultValue={selectedReservation?.location}
+                />
+                {errors.location && (
+                  <p className="text-sm text-red-500">
+                    {errors.location.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Package</label>
+                <Input
+                  {...register("package")}
+                  defaultValue={selectedReservation?.package}
+                />
+                {errors.package && (
+                  <p className="text-sm text-red-500">
+                    {errors.package.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Reservation Date</label>
+                <Input
+                  type="date"
+                  {...register("reservation_date")}
+                  defaultValue={
+                    selectedReservation?.reservation_date.split("T")[0]
+                  }
+                  min={today}
+                />
+                {errors.reservation_date && (
+                  <p className="text-sm text-red-500">
+                    {errors.reservation_date.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Amount Due</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  {...register("total_price", { valueAsNumber: true })}
+                  defaultValue={selectedReservation?.total_price}
+                />
+                {errors.total_price && (
+                  <p className="text-sm text-red-500">
+                    {errors.total_price.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Expected Guests</label>
+                <Input
+                  type="number"
+                  {...register("pax", { valueAsNumber: true })}
+                  defaultValue={selectedReservation?.pax}
+                />
+                {errors.pax && (
+                  <p className="text-sm text-red-500">{errors.pax.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Mobile</label>
-              <Input
-                {...register("mobile")}
-                defaultValue={selectedReservation?.mobile_number || "+639"}
-                placeholder="+639XXXXXXXXX"
+              <label className="text-sm font-medium">Notes</label>
+              <textarea
+                {...register("notes")}
+                defaultValue={selectedReservation?.notes}
+                className="w-full h-24 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
-              {errors.mobile && (
-                <p className="text-sm text-red-500">{errors.mobile.message}</p>
+              {errors.notes && (
+                <p className="text-sm text-red-500">{errors.notes.message}</p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Location</label>
-              <Input
-                {...register("location")}
-                defaultValue={selectedReservation?.location}
-              />
-              {errors.location && (
-                <p className="text-sm text-red-500">
-                  {errors.location.message}
-                </p>
-              )}
+            <div className="flex justify-end gap-4 mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  isEdit ? setShowEditDialog(false) : setShowAddDialog(false);
+                  reset();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white"
+              >
+                {isEdit ? "Save Changes" : "Add Reservation"}
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Reservation Date</label>
-              <Input
-                type="date"
-                {...register("reservationDate")}
-                defaultValue={
-                  selectedReservation?.reservation_date.split("Z")[0]
-                }
-              />
-              {errors.reservationDate && (
-                <p className="text-sm text-red-500">
-                  {errors.reservationDate.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Amount Due</label>
-              <Input
-                type="number"
-                step="0.01"
-                {...register("amountDue", { valueAsNumber: true })}
-                defaultValue={selectedReservation?.total_price}
-              />
-              {errors.amountDue && (
-                <p className="text-sm text-red-500">
-                  {errors.amountDue.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Expected Guests</label>
-              <Input
-                type="number"
-                step="0.01"
-                {...register("pax", { valueAsNumber: true })}
-                defaultValue={selectedReservation?.pax}
-              />
-              {errors.pax && (
-                <p className="text-sm text-red-500">{errors.pax.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-4 mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                isEdit ? setShowEditDialog(false) : setShowAddDialog(false);
-                reset();
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white"
-            >
-              {isEdit ? "Save Changes" : "Add Reservation"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
+          </form>
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   return (
     <div className="space-y-4 relative min-h-[calc(100vh-10rem)]">
@@ -253,6 +346,16 @@ export default function Reservations() {
             <ArrowUpDown className="h-4 w-4" />
           </Button>
         </div>
+        <Button
+          className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white"
+          onClick={() => {
+            setSelectedReservation(null);
+            setShowAddDialog(true);
+          }}
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Add Reservation
+        </Button>
       </div>
 
       <div className="bg-white/70 backdrop-blur-lg rounded-lg overflow-hidden">
@@ -333,16 +436,52 @@ export default function Reservations() {
         </div>
       </div>
 
+      <div className="flex justify-between items-center mt-4">
+        <Button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Previous
+        </Button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <Button
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+        >
+          Next
+          <ChevronRight className="h-4 w-4 ml-2" />
+        </Button>
+      </div>
+
       <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reservation Details</DialogTitle>
+            <DialogTitle className="text-xl font-bold border-b-emerald-950 border-b-2 pb-2">
+              Reservation Details
+            </DialogTitle>
           </DialogHeader>
           {selectedReservation && (
             <div className="space-y-4">
               <div>
+                <h4 className="font-semibold">Selected Package:</h4>
+                <p>{selectedReservation.package}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold">Expected Guest:</h4>
+                <p>{selectedReservation.pax}</p>
+              </div>
+              <div>
                 <h4 className="font-semibold">Created At:</h4>
                 <p>{formatDate(selectedReservation.created_at)}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold">Allergies/Notes:</h4>
+                <p>{selectedReservation.notes}</p>
               </div>
             </div>
           )}
@@ -379,18 +518,6 @@ export default function Reservations() {
 
       <ReservationDialog isEdit={true} />
       <ReservationDialog isEdit={false} />
-
-      <Button
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white rounded-full shadow-lg"
-        size="lg"
-        onClick={() => {
-          setSelectedReservation(null);
-          setShowAddDialog(true);
-        }}
-      >
-        <Plus className="h-5 w-5 mr-2" />
-        Add Reservation
-      </Button>
     </div>
   );
 }

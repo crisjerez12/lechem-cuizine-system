@@ -1,29 +1,19 @@
 "use server";
 
-interface Reservation {
-  reservationId: string;
-  name: string;
-  time: string;
-  amountDue: number;
-}
+import supabase from "@/lib/supabase";
 
-interface DateStatus {
-  date: string;
-  isOpen: boolean;
-  reservation: Reservation | null;
-}
+export async function getCalendarData() {
+  const { data, error } = await supabase
+    .from("official_reservations")
+    .select("reservation_date")
+    .gte("reservation_date", new Date().toISOString());
 
-const dateStatuses: Record<string, DateStatus> = {};
-
-export async function getCalendarData(month: string) {
-  console.log(month);
-  return dateStatuses;
-}
-
-export async function toggleReservationStatus(date: string, isOpen: boolean) {
-  if (dateStatuses[date]) {
-    dateStatuses[date].isOpen = isOpen;
-    return { success: true };
+  if (error) {
+    console.error("Error fetching reservations:", error);
+    throw new Error("Failed to fetch reservations");
   }
-  return { success: false, error: "Date not found" };
+
+  const allDates = data.map((item) => item.reservation_date);
+
+  return allDates;
 }

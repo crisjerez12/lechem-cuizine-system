@@ -18,7 +18,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Info, Trash2, CalendarPlus } from "lucide-react";
+import {
+  Info,
+  Trash2,
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   addToReservations,
@@ -26,7 +32,7 @@ import {
   deleteOnlineReservation,
   getOnlineReservations,
 } from "@/actions/online";
-import { Reservation } from "@/lib/types/reservationType";
+import type { Reservation } from "@/lib/types/reservationType";
 
 export default function Online() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,14 +42,20 @@ export default function Online() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     async function fetchReservation() {
       const { data, error } = await getOnlineReservations();
       if (error) return;
       setReservations(data);
+      setTotalPages(Math.ceil(data.length / itemsPerPage));
     }
     fetchReservation();
   }, []);
+
   const handleDeleteLapsedDates = async () => {
     const res = await deleteLapsedReservations();
     if (!res?.success || res.data === null) {
@@ -51,6 +63,7 @@ export default function Online() {
       return;
     }
     setReservations(res.data);
+    setTotalPages(Math.ceil(res.data.length / itemsPerPage));
     toast.success("Lapsed reservations deleted successfully");
   };
 
@@ -58,10 +71,16 @@ export default function Online() {
     const res = await deleteOnlineReservation(reservationId);
     if (!res.success) {
       toast.error("Reservation failed to delete");
+    } else {
+      setReservations((prevReservations) =>
+        prevReservations.filter(
+          (reservation) => reservation.id !== reservationId
+        )
+      );
+      setTotalPages(Math.ceil((reservations.length - 1) / itemsPerPage));
+      setShowDeleteDialog(false);
+      toast.success("Reservation deleted successfully");
     }
-
-    setShowDeleteDialog(false);
-    toast.success("Reservation deleted successfully");
   };
 
   const formatDate = (dateString: string) => {
@@ -72,15 +91,15 @@ export default function Online() {
     });
   };
 
-  const filteredReservations = reservations
-    .filter((reservation) =>
-      reservation.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort(
-      (a, b) =>
-        new Date(b.reservation_date).getTime() -
-        new Date(a.reservation_date).getTime()
-    );
+  const filteredReservations = reservations.filter((reservation) =>
+    reservation.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const paginatedReservations = filteredReservations.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleAddReservation = async (reservation: Reservation | null) => {
     const res = await addToReservations(reservation);
     if (!res.success) toast.error("Failed to Add Reservation");
@@ -126,7 +145,7 @@ export default function Online() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredReservations.map((reservation) => (
+              {paginatedReservations.map((reservation) => (
                 <TableRow key={reservation.id}>
                   <TableCell className="font-medium">
                     {reservation.id}
@@ -268,6 +287,27 @@ export default function Online() {
           </div>
         </DialogContent>
       </Dialog>
+      <div className="flex justify-between items-center mt-4">
+        <Button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Previous
+        </Button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <Button
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+        >
+          Next
+          <ChevronRight className="h-4 w-4 ml-2" />
+        </Button>
+      </div>
     </div>
   );
 }
