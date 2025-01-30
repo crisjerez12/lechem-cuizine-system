@@ -2,14 +2,27 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { UtensilsCrossed, LayoutDashboard, Globe, CalendarDays, Tag, UserCircle2, BookOpenCheck } from "lucide-react";
+import {
+  UtensilsCrossed,
+  LayoutDashboard,
+  Globe,
+  CalendarDays,
+  Tag,
+  UserCircle2,
+  BookOpenCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Overview", href: "/dashboard" },
   { icon: Globe, label: "Online", href: "/dashboard/online" },
-  { icon: BookOpenCheck, label: "Reservations", href: "/dashboard/reservations" },
+  {
+    icon: BookOpenCheck,
+    label: "Reservations",
+    href: "/dashboard/reservations",
+  },
   { icon: CalendarDays, label: "Calendar", href: "/dashboard/calendar" },
   { icon: Tag, label: "Offers", href: "/dashboard/offers" },
   { icon: UserCircle2, label: "Account", href: "/dashboard/account" },
@@ -26,19 +39,28 @@ export function Sidebar({ isOpen }: SidebarProps) {
     <div
       className={cn(
         "fixed md:relative h-screen bg-gradient-to-b from-emerald-400 to-emerald-600 backdrop-blur-lg border-r border-emerald-100 p-6 flex flex-col transition-all duration-300 ease-in-out z-20",
-        isOpen ? "translate-x-0 w-64" : "-translate-x-full w-64 md:-translate-x-56 md:w-20"
+        isOpen
+          ? "translate-x-0 w-64"
+          : "-translate-x-full w-64 md:-translate-x-56 md:w-20"
       )}
     >
-      <div className={cn(
-        "flex items-center gap-3 mb-8",
-        !isOpen && "md:justify-center"
-      )}>
-        <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center shadow-lg">
-          <UtensilsCrossed className="h-6 w-6 text-white" />
+      <div
+        className={cn(
+          "flex items-center gap-3 mb-8",
+          !isOpen && "md:justify-center"
+        )}
+      >
+        <div className="h-10 w-16 bg-white/90 px-2 rounded-xl flex items-center justify-center shadow-lg">
+          <Image src="/logo.png" height={100} width={100} alt="logo" />
         </div>
-        <div className={cn("transition-opacity duration-200", !isOpen && "md:opacity-0")}>
+        <div
+          className={cn(
+            "transition-opacity duration-200",
+            !isOpen && "md:opacity-0"
+          )}
+        >
           <h1 className="font-bold text-white">Lechem Cuizine</h1>
-          <p className="text-xs text-white/80">Premium Catering</p>
+          <p className="text-xs text-white/80">Reservation System</p>
         </div>
       </div>
 
@@ -58,7 +80,12 @@ export function Sidebar({ isOpen }: SidebarProps) {
                 )}
               >
                 <Icon className="h-5 w-5" />
-                <span className={cn("transition-opacity duration-200", !isOpen && "md:hidden")}>
+                <span
+                  className={cn(
+                    "transition-opacity duration-200",
+                    !isOpen && "md:hidden"
+                  )}
+                >
                   {item.label}
                 </span>
               </Button>

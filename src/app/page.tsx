@@ -10,6 +10,7 @@ import { UtensilsCrossed, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { LoginForm, loginSchema } from "@/lib/types/loginTypes";
 import { authenticate } from "@/actions/auth";
+import Image from "next/image";
 
 export default function Home() {
   const router = useRouter();
@@ -39,11 +40,11 @@ export default function Home() {
       <div className="w-full max-w-md">
         <div className="bg-white/70 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-emerald-100">
           <div className="flex flex-col items-center space-y-2 mb-8">
-            <div className="h-16 w-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <UtensilsCrossed className="h-8 w-8 text-white" />
+            <div className="h-20 flex items-center justify-center ">
+              <Image src="/logo.png" height={150} width={150} alt="logo" />
             </div>
             <h1 className="text-2xl font-bold text-gray-800">Lechem Cuizine</h1>
-            <p className="text-sm text-gray-600">Premium Catering Services</p>
+            <p className="text-sm text-gray-600">Reservation System</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
