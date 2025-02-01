@@ -1,18 +1,31 @@
 "use server";
 
 import supabase from "@/lib/supabase";
-import { Reservation, ReservationForm } from "@/lib/types/reservationType";
+import type { Reservation, ReservationForm } from "@/lib/types/reservationType";
 
-export async function getReservations(page: number = 1, pageSize: number = 10) {
+export async function getReservations(
+  page = 1,
+  pageSize = 10,
+  startDate?: string,
+  endDate?: string
+) {
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
-
-  const { data, error, count } = await supabase
+  console.log(startDate, endDate);
+  let query = supabase
     .from("official_reservations")
     .select("*", { count: "exact" })
-    .range(start, end)
     .order("reservation_date", { ascending: false });
 
+  if (startDate && endDate) {
+    query = query
+      .gte("reservation_date", startDate)
+      .lte("reservation_date", endDate);
+  } else {
+    query = query.range(start, end);
+  }
+
+  const { data, error, count } = await query;
   if (error) {
     return {
       success: false,

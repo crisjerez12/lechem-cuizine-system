@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,6 +40,8 @@ import {
   updateReservation,
   deleteReservation,
 } from "@/actions/reservations";
+import DownloadReservations from "@/components/DownloadReservations";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Reservations() {
   const [searchName, setSearchName] = useState("");
@@ -52,11 +53,11 @@ export default function Reservations() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showPastReservations, setShowPastReservations] = useState(false);
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
   const {
     register,
     handleSubmit,
@@ -68,20 +69,22 @@ export default function Reservations() {
 
   useEffect(() => {
     fetchReservations();
-  }, []); // Removed currentPage dependency
+  }, []);
 
   async function fetchReservations() {
-    const { data, count, error } = await getReservations(currentPage);
-    if (error) {
+    const { success, data, count, error } = await getReservations(currentPage);
+    if (!success || error) {
       toast.error("Failed to fetch reservations");
       return;
     }
-    setReservations(data);
-    if (count === null) return;
-    setTotalPages(Math.ceil(count / 10));
+    setReservations(data || []);
+    if (count !== null) {
+      setTotalPages(Math.ceil(count / 10));
+    }
   }
 
   const onSubmit = async (data: ReservationForm) => {
+    setShowAddDialog(false);
     try {
       const reservationData = {
         ...data,
@@ -93,7 +96,6 @@ export default function Reservations() {
       if (success && reservation) {
         setReservations((prev) => [reservation, ...prev.slice(0, 9)]);
         toast.success("Reservation added successfully");
-        setShowAddDialog(false);
         reset();
         fetchReservations();
       } else {
@@ -119,6 +121,7 @@ export default function Reservations() {
 
   const handleUpdate = async (data: ReservationForm) => {
     if (!selectedReservation) return;
+    setShowEditDialog(false);
 
     try {
       const { success, reservation, error } = await updateReservation(
@@ -130,7 +133,6 @@ export default function Reservations() {
           prev.map((r) => (r.id === selectedReservation.id ? reservation : r))
         );
         toast.success("Reservation updated successfully");
-        setShowEditDialog(false);
         reset();
         fetchReservations();
       } else {
@@ -151,13 +153,19 @@ export default function Reservations() {
   };
 
   const filteredReservations = reservations
-    .filter(
-      (reservation) =>
+    .filter((reservation) => {
+      const reservationDate = new Date(reservation.reservation_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      return (
+        (showPastReservations || reservationDate >= today) &&
         reservation.name.toLowerCase().includes(searchName.toLowerCase()) &&
         reservation.location
           .toLowerCase()
           .includes(searchLocation.toLowerCase())
-    )
+      );
+    })
     .sort((a, b) => {
       const dateA = new Date(a.reservation_date).getTime();
       const dateB = new Date(b.reservation_date).getTime();
@@ -165,7 +173,6 @@ export default function Reservations() {
     });
 
   const ReservationDialog = ({ isEdit = false }) => {
-    const today = new Date().toISOString().split("T")[0];
     return (
       <Dialog
         open={isEdit ? showEditDialog : showAddDialog}
@@ -202,8 +209,12 @@ export default function Reservations() {
                 <label className="text-sm font-medium">Mobile</label>
                 <Input
                   {...register("mobile_number")}
-                  defaultValue={selectedReservation?.mobile_number || "+639"}
-                  placeholder="+639XXXXXXXXX"
+                  type="number"
+                  defaultValue={selectedReservation?.mobile_number || "639"}
+                  max={6399999999999}
+                  min={6390000000000}
+                  pattern="\63[0-9]{9}"
+                  placeholder="639XXXXXXXXX"
                 />
                 {errors.mobile_number && (
                   <p className="text-sm text-red-500">
@@ -243,10 +254,14 @@ export default function Reservations() {
                 <Input
                   type="date"
                   {...register("reservation_date")}
+                  min={new Date().toISOString().split("T")[0]}
                   defaultValue={
-                    selectedReservation?.reservation_date.split("T")[0]
+                    selectedReservation?.reservation_date
+                      ? new Date(selectedReservation.reservation_date)
+                          .toISOString()
+                          .split("T")[0]
+                      : undefined
                   }
-                  min={today}
                 />
                 {errors.reservation_date && (
                   <p className="text-sm text-red-500">
@@ -322,6 +337,21 @@ export default function Reservations() {
   return (
     <div className="space-y-4 relative min-h-[calc(100vh-10rem)]">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white/70 backdrop-blur-lg p-4 rounded-lg">
+        <div className="flex items-center  gap-x-2">
+          <Checkbox
+            id="showPastReservations"
+            checked={showPastReservations}
+            onCheckedChange={(checked) =>
+              setShowPastReservations(checked === true)
+            }
+          />
+          <label
+            htmlFor="showPastReservations"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Show past reservations
+          </label>
+        </div>
         <div className="flex flex-col sm:flex-row gap-4 w-full">
           <Input
             placeholder="Search by name..."
@@ -356,6 +386,7 @@ export default function Reservations() {
           <Plus className="h-5 w-5 mr-2" />
           Add Reservation
         </Button>
+        <DownloadReservations />
       </div>
 
       <div className="bg-white/70 backdrop-blur-lg rounded-lg overflow-hidden">
@@ -516,8 +547,8 @@ export default function Reservations() {
         </DialogContent>
       </Dialog>
 
-      <ReservationDialog isEdit={true} />
       <ReservationDialog isEdit={false} />
+      <ReservationDialog isEdit={true} />
     </div>
   );
 }

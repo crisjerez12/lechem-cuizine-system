@@ -15,9 +15,7 @@ export interface Reservation {
 }
 export const reservationSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  mobile_number: z
-    .string()
-    .regex(/^\+639\d{9}$/, "Mobile number must be in format: +639XXXXXXXXX"),
+  mobile_number: z.string(),
   location: z.string().min(1, "Location is required"),
   package: z.string().optional(),
   notes: z.string().optional(),

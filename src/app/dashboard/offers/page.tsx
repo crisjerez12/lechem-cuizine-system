@@ -50,6 +50,7 @@ export default function Packages() {
   const [newAttribute, setNewAttribute] = useState("");
   const [newFood, setNewFood] = useState("");
   const [newDessert, setNewDessert] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -67,6 +68,7 @@ export default function Packages() {
   }, []);
 
   const handleAddItem = async () => {
+    setIsSubmitting(true);
     try {
       const result = await addCateringItem(newPackage);
       if (result.success) {
@@ -86,6 +88,8 @@ export default function Packages() {
       }
     } catch (error) {
       toast.error("Failed to add package");
+    } finally {
+      setIsSubmitting(false);
     }
   };
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,6 +113,7 @@ export default function Packages() {
   };
   const handleUpdateItem = async () => {
     if (!selectedPackage?.id) return;
+    setIsSubmitting(true);
     try {
       const result = await updateCateringItem(
         selectedPackage.id.toString(),
@@ -126,6 +131,8 @@ export default function Packages() {
       }
     } catch (error) {
       toast.error("Failed to update package");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -178,28 +185,27 @@ export default function Packages() {
                   </Button>
                 </div>
               </div>
-              <p className="text-gray-600 line-clamp-2 mb-4">
-                {pkg.description}
-                <button
+              <p className="text-gray-600 mb-4">
+                <Button
+                  className="p-0 h-auto font-bold text-white   bg-orange-400  px-2 py-1 hover:bg-orange-500"
                   onClick={() => {
                     setSelectedPackage(pkg);
                     setShowDescription(true);
                   }}
-                  className="text-orange-500 hover:text-orange-600 ml-1 inline-flex items-center"
                 >
-                  See more
-                </button>
+                  Show description
+                </Button>
               </p>
               <div className="flex flex-wrap gap-2 mb-4">
-                {pkg.attributes.map((attr, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="bg-orange-100 text-orange-800 hover:bg-orange-200"
-                  >
-                    {attr}
-                  </Badge>
-                ))}
+                <Button
+                  className="p-0 h-auto font-bold text-white  px-2 py-1 bg-red-400 hover:bg-red-500"
+                  onClick={() => {
+                    setSelectedPackage(pkg);
+                    setShowInclusions(true);
+                  }}
+                >
+                  Show attributes
+                </Button>
               </div>
               <div className="mt-auto">
                 <button
@@ -253,6 +259,14 @@ export default function Packages() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <h3 className="font-bold mb-2">Attributes:</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {selectedPackage?.attributes.map((attr, index) => (
+                  <li key={index}>{attr}</li>
+                ))}
+              </ul>
+            </div>
             <div>
               <h3 className="font-bold mb-2">Foods:</h3>
               <ul className="list-disc pl-5 space-y-1">
@@ -383,7 +397,8 @@ export default function Packages() {
                       : selectedPackage?.price || 0
                   }
                   onChange={(e) => {
-                    const value = Number.parseFloat(e.target.value);
+                    const value =
+                      e.target.value === "" ? 0 : Number(e.target.value);
                     showAddDialog
                       ? setNewPackage({ ...newPackage, price: value })
                       : setSelectedPackage((prev) =>
@@ -405,7 +420,8 @@ export default function Packages() {
                       : selectedPackage?.min_price || 0
                   }
                   onChange={(e) => {
-                    const value = Number.parseFloat(e.target.value);
+                    const value =
+                      e.target.value === "" ? 0 : Number(e.target.value);
                     showAddDialog
                       ? setNewPackage({ ...newPackage, min_price: value })
                       : setSelectedPackage((prev) =>
@@ -650,8 +666,13 @@ export default function Packages() {
             <Button
               className="bg-orange-500 hover:bg-orange-600"
               onClick={showAddDialog ? handleAddItem : handleUpdateItem}
+              disabled={isSubmitting}
             >
-              {showAddDialog ? "Add Package" : "Save Changes"}
+              {isSubmitting
+                ? "Processing..."
+                : showAddDialog
+                ? "Add Package"
+                : "Save Changes"}
             </Button>
           </div>
         </DialogContent>
