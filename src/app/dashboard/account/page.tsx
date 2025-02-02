@@ -14,9 +14,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "sonner";
+import { updateEmail } from "./actions";
 
 const accountSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
+  email: z.string().email("Invalid email address"),
   currentPassword: z.string().min(6, "Password must be at least 6 characters"),
   newPassword: z.string().min(6, "Password must be at least 6 characters"),
 });
@@ -34,6 +36,7 @@ export default function Account() {
     resolver: zodResolver(accountSchema),
     defaultValues: {
       fullName: "John Doe",
+      email: "",
       currentPassword: "",
       newPassword: "",
     },
@@ -79,6 +82,22 @@ export default function Account() {
 
               {isEditing && (
                 <>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Email
+                    </label>
+                    <Input
+                      {...register("email")}
+                      type="email"
+                      className="mt-1"
+                    />
+                    {errors.email && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {errors.email.message}
+                      </p>
+                    )}
+                  </div>
+
                   <div>
                     <label className="text-sm font-medium text-gray-700">
                       Current Password
@@ -148,49 +167,24 @@ export default function Account() {
       <Card className="bg-white/70 backdrop-blur-lg shadow-lg border-emerald-100">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-gray-800">
-            Rules and Regulations
+            Update Email
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="item-1">
-              <AccordionTrigger>Reservation Policies</AccordionTrigger>
-              <AccordionContent>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Reservations must be made at least 7 days in advance</li>
-                  <li>50% down payment is required to confirm booking</li>
-                  <li>Minimum order value of $300 for all catering services</li>
-                  <li>Cancellations must be made 48 hours before the event</li>
-                </ul>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-2">
-              <AccordionTrigger>Payment Terms</AccordionTrigger>
-              <AccordionContent>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>
-                    Full payment must be received 24 hours before the event
-                  </li>
-                  <li>
-                    We accept credit cards, bank transfers, and digital payments
-                  </li>
-                  <li>Late payments incur a 5% penalty fee</li>
-                </ul>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-3">
-              <AccordionTrigger>Service Guidelines</AccordionTrigger>
-              <AccordionContent>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Service staff will arrive 1 hour before the event</li>
-                  <li>
-                    Menu modifications must be finalized 3 days before the event
-                  </li>
-                  <li>Additional charges apply for extended service hours</li>
-                </ul>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+          {/* <form action={updateEmail} className="space-y-4">
+            <div>
+              <Input
+                type="email"
+                name="email"
+                placeholder="New Email Address"
+                required
+                className="w-full"
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              Update Email
+            </Button>
+          </form> */}
         </CardContent>
       </Card>
     </div>

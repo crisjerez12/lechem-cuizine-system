@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { UtensilsCrossed, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { LoginForm, loginSchema } from "@/lib/types/loginTypes";
 import { authenticate } from "@/actions/auth";
@@ -26,7 +26,11 @@ export default function Home() {
   const onSubmit = async (data: LoginForm) => {
     try {
       const res = await authenticate(data);
-      if (!res.success) toast.error("Something went wrong");
+      console.log(res);
+      if (!res.success) {
+        toast.error("Something went wrong");
+        return;
+      }
       toast.success("Login successful!");
       router.push("/dashboard");
     } catch (error) {

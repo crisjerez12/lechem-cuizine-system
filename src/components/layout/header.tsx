@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu } from "lucide-react";
 import { toast } from "sonner";
+import { logout } from "@/actions/auth";
 
 interface HeaderProps {
   isOpen: boolean;
@@ -20,7 +21,12 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
     return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const res = await logout();
+    if (!res.success) {
+      toast.error("Logged out unsuccessful");
+      return;
+    }
     toast.success("Logged out successfully");
     router.push("/");
   };
@@ -40,7 +46,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
           {getPageTitle(pathname)}
         </h1>
       </div>
-      
+
       <div className="flex items-center gap-4">
         <span className="text-gray-600">Cris Jerez</span>
         <Button
