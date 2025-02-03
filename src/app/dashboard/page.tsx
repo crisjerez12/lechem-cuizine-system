@@ -12,13 +12,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Users, ShoppingBag, UserCheck } from "lucide-react";
+import { Users, ShoppingBag } from "lucide-react";
 import { getDashboardData } from "@/actions/dashboard";
 import { CardSkeleton, ChartSkeleton } from "@/components/skeleton-loaders";
 
 interface MonthlyStats {
   month: string;
-  walkIn: number;
   online: number;
 }
 const months = [
@@ -42,7 +41,6 @@ export default function Dashboard() {
   const [stats, setStats] = useState({
     monthlySales: 0,
     onlineReservations: 0,
-    walkInReservations: 0,
   });
 
   useEffect(() => {
@@ -64,8 +62,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="space-y-8">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <CardSkeleton />
+        <div className="grid gap-4 md:grid-cols-2">
           <CardSkeleton />
           <CardSkeleton />
         </div>
@@ -77,7 +74,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 ">
         <Card className="bg-white/70 backdrop-blur-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -107,25 +104,12 @@ export default function Dashboard() {
             <p className="text-xs text-gray-500">Bookings this month</p>
           </CardContent>
         </Card>
-
-        <Card className="bg-white/70 backdrop-blur-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Monthly Walk-in Reservations
-            </CardTitle>
-            <UserCheck className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.walkInReservations}</div>
-            <p className="text-xs text-gray-500">Direct bookings this month</p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Reservations Chart */}
       <Card className="bg-white/70 backdrop-blur-lg p-6">
         <CardHeader>
-          <CardTitle>Reservation Trends</CardTitle>
+          <CardTitle>Online Reservation Trends</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[400px] w-full">
@@ -140,16 +124,6 @@ export default function Dashboard() {
                 }}
               >
                 <defs>
-                  <linearGradient
-                    id="walkInGradient"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1} />
-                  </linearGradient>
                   <linearGradient
                     id="onlineGradient"
                     x1="0"
@@ -181,15 +155,6 @@ export default function Dashboard() {
                   wrapperStyle={{
                     paddingTop: "20px",
                   }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="walkIn"
-                  name="Walk-in Reservations"
-                  stroke="#3B82F6"
-                  fillOpacity={1}
-                  fill="url(#walkInGradient)"
-                  strokeWidth={2}
                 />
                 <Area
                   type="monotone"

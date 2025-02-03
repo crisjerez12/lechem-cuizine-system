@@ -51,7 +51,6 @@ export default function Packages() {
   const [newFood, setNewFood] = useState("");
   const [newDessert, setNewDessert] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   useEffect(() => {
     const fetchPackages = async () => {
       setIsLoading(true);
@@ -334,6 +333,7 @@ export default function Packages() {
                   type="file"
                   id="image-upload"
                   accept=".jpg,.jpeg,.png"
+                  disabled={showEditDialog}
                   onChange={(e) => {
                     handleFileChange(e);
                     setFile(e.target.files ? e.target.files[0] : null);

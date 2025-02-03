@@ -4,7 +4,6 @@ import supabase from "@/lib/supabase";
 
 type MonthlyStatsResult = {
   total_sales: number;
-  walk_in_count: number;
   online_count: number;
 };
 
@@ -13,16 +12,21 @@ export async function getDashboardData() {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1; // JavaScript months are 0-indexed
 
-  // Function to get the start of the month for a given year and month
+  // Function to get the number of days in a given month and year
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month, 0).getDate() + 1; // Setting day to 0 returns last day of previous month
+  };
+
+  // Function to get the start of the month
   const getStartOfMonth = (year: number, month: number) => {
-    return new Date(year, month - 1, 1).toISOString().split("T")[0];
+    return new Date(year, month - 1, 2).toISOString().split("T")[0]; // Month is 0-based
   };
 
-  // Function to get the end of the month for a given year and month
+  // Function to get the end of the month
   const getEndOfMonth = (year: number, month: number) => {
-    return new Date(year, month, 0).toISOString().split("T")[0];
+    const daysInMonth = getDaysInMonth(year, month);
+    return new Date(year, month - 1, daysInMonth).toISOString().split("T")[0]; // Month is 0-based
   };
-
   // Function to get monthly stats
   async function getMonthlyStats(
     startDate: string,
@@ -36,7 +40,7 @@ export async function getDashboardData() {
 
     if (error) {
       console.error("Error fetching data:", error);
-      return { total_sales: 0, walk_in_count: 0, online_count: 0 };
+      return { total_sales: 0, online_count: 0 };
     }
 
     const total_sales = data.reduce(
@@ -46,7 +50,7 @@ export async function getDashboardData() {
     const walk_in_count = data.filter((row) => row.type === "Walk-in").length;
     const online_count = data.filter((row) => row.type === "online").length;
 
-    return { total_sales, walk_in_count, online_count };
+    return { total_sales, online_count };
   }
 
   // Get current month stats
@@ -72,7 +76,6 @@ export async function getDashboardData() {
         "default",
         { month: "long" }
       ),
-      walkIn: monthData.walk_in_count,
       online: monthData.online_count,
     });
   }
@@ -81,7 +84,6 @@ export async function getDashboardData() {
     cardStats: {
       monthlySales: currentMonthStats.total_sales,
       onlineReservations: currentMonthStats.online_count,
-      walkInReservations: currentMonthStats.walk_in_count,
     },
     monthlyStats,
   };
