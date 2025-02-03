@@ -2,6 +2,7 @@
 
 import supabase from "@/lib/supabase";
 import type { CateringItem } from "@/lib/types/cateringType";
+import { createClient } from "@/utils/supabase/server";
 import { fileTypeFromBuffer } from "file-type";
 
 async function getFileExtension(base64String: string): Promise<string> {
@@ -76,6 +77,8 @@ export async function updateCateringItem(
   id: string,
   data: Partial<CateringItem>
 ) {
+  const supabase = await createClient();
+
   const { image, ...rest } = data;
   const { data: updatedItem, error } = await supabase
     .from("packages")

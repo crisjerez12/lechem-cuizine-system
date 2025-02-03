@@ -30,9 +30,7 @@ export default function DashboardLayout({
       <Sidebar isOpen={isOpen} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header isOpen={isOpen} setIsOpen={setIsOpen} />
-        <main className="flex-1 overflow-auto p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
       {/* Overlay for mobile */}
       {isOpen && (

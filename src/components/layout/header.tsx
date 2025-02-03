@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu } from "lucide-react";
 import { toast } from "sonner";
-import { logout } from "@/actions/auth";
+import { getUserInfo, logout } from "@/actions/auth";
+import { useEffect, useState } from "react";
 
 interface HeaderProps {
   isOpen: boolean;
@@ -14,13 +15,20 @@ interface HeaderProps {
 export function Header({ isOpen, setIsOpen }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
-
+  const [currentUser, setCurrentUser] = useState<string | undefined>("User");
   const getPageTitle = (path: string) => {
     const segments = path.split("/");
     const lastSegment = segments[segments.length - 1];
     return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
   };
-
+  useEffect(() => {
+    async function fecthUserInfo() {
+      const res = await getUserInfo();
+      if (!res.success || res.data === undefined) setCurrentUser("User");
+      setCurrentUser(res.data);
+    }
+    fecthUserInfo();
+  }, []);
   const handleLogout = async () => {
     const res = await logout();
     if (!res.success) {
@@ -48,7 +56,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <span className="text-gray-600">Cris Jerez</span>
+        <span className="text-gray-600 capitalize">{currentUser}</span>
         <Button
           onClick={handleLogout}
           variant="ghost"

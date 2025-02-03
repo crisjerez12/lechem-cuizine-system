@@ -20,14 +20,14 @@ export const metadata: Metadata = {
     "Experience exceptional catering services with Lechem Cuizine. We bring culinary excellence to your special events.",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
     <html lang="en">
-      <body className={`${fredoka.variable} ${quicksand.variable}`}>
+      <body className={`${fredoka.variable} ${quicksand.variable} font-sans`}>
         {children}
         <Toaster />
       </body>

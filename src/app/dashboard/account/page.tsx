@@ -1,55 +1,51 @@
 "use client";
 
-import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { EditCredentialDialog } from "@/components/edit-credential-dialog";
+import { getUserCredentials, updateCredential } from "@/actions/account";
 import { toast } from "sonner";
-import { updateEmail } from "./actions";
-
-const accountSchema = z.object({
-  fullName: z.string().min(1, "Full name is required"),
-  email: z.string().email("Invalid email address"),
-  currentPassword: z.string().min(6, "Password must be at least 6 characters"),
-  newPassword: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type AccountForm = z.infer<typeof accountSchema>;
-
+type Credential = {
+  fullName: string;
+  email: string | undefined;
+};
 export default function Account() {
-  const [isEditing, setIsEditing] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<AccountForm>({
-    resolver: zodResolver(accountSchema),
-    defaultValues: {
-      fullName: "John Doe",
-      email: "",
-      currentPassword: "",
-      newPassword: "",
-    },
+  const [openDialog, setOpenDialog] = useState<
+    "display_name" | "email" | "password" | null
+  >(null);
+  const [userInfo, setUserInfo] = useState<Credential>({
+    fullName: "",
+    email: "",
   });
 
-  const onSubmit = async (data: AccountForm) => {
+  const handleEdit = (field: "display_name" | "email" | "password") => {
+    setOpenDialog(field);
+  };
+  useEffect(() => {
+    async function fetchCredentials() {
+      const res = await getUserCredentials();
+      if (!res.success) toast.error("Failed to fetch current Credentials");
+      setUserInfo(res.data);
+    }
+    fetchCredentials();
+  }, []);
+
+  const handleUpdate = async (field: string, value: string) => {
     try {
-      console.log("Form data:", data);
-      toast.success("Account information updated successfully!");
-      setIsEditing(false);
+      await updateCredential(field, value);
+      setUserInfo((prev) => ({ ...prev, [field]: value }));
+      setOpenDialog(null);
     } catch (error) {
-      console.log(error);
-      toast.error("Failed to update account information");
+      console.error("Failed to update:", error);
     }
   };
 
@@ -62,131 +58,62 @@ export default function Account() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Full Name
-                </label>
-                <Input
-                  {...register("fullName")}
-                  disabled={!isEditing}
-                  className="mt-1"
-                />
-                {errors.fullName && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {errors.fullName.message}
-                  </p>
-                )}
-              </div>
-
-              {isEditing && (
-                <>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Email
-                    </label>
-                    <Input
-                      {...register("email")}
-                      type="email"
-                      className="mt-1"
-                    />
-                    {errors.email && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Current Password
-                    </label>
-                    <Input
-                      {...register("currentPassword")}
-                      type="password"
-                      className="mt-1"
-                    />
-                    {errors.currentPassword && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {errors.currentPassword.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      New Password
-                    </label>
-                    <Input
-                      {...register("newPassword")}
-                      type="password"
-                      className="mt-1"
-                    />
-                    {errors.newPassword && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {errors.newPassword.message}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-4">
-              {isEditing ? (
-                <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Credential</TableHead>
+                <TableHead>Value</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>Full Name</TableCell>
+                <TableCell>{userInfo.fullName}</TableCell>
+                <TableCell>
                   <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsEditing(false)}
+                    className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white rounded-xl h-12 font-medium shadow-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02]"
+                    onClick={() => handleEdit("display_name")}
                   >
-                    Cancel
+                    Edit
                   </Button>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Email</TableCell>
+                <TableCell>{userInfo.email}</TableCell>
+                <TableCell>
                   <Button
-                    type="submit"
-                    className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white"
+                    className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white rounded-xl h-12 font-medium shadow-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02]"
+                    onClick={() => handleEdit("email")}
                   >
-                    Save Changes
+                    Edit
                   </Button>
-                </>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white"
-                >
-                  Edit Profile
-                </Button>
-              )}
-            </div>
-          </form>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Password</TableCell>
+                <TableCell>********</TableCell>
+                <TableCell>
+                  <Button
+                    className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white rounded-xl h-12 font-medium shadow-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02]"
+                    onClick={() => handleEdit("password")}
+                  >
+                    Edit
+                  </Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      <Card className="bg-white/70 backdrop-blur-lg shadow-lg border-emerald-100">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-gray-800">
-            Update Email
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* <form action={updateEmail} className="space-y-4">
-            <div>
-              <Input
-                type="email"
-                name="email"
-                placeholder="New Email Address"
-                required
-                className="w-full"
-              />
-            </div>
-            <Button type="submit" className="w-full">
-              Update Email
-            </Button>
-          </form> */}
-        </CardContent>
-      </Card>
+      <EditCredentialDialog
+        open={openDialog !== null}
+        onOpenChange={() => setOpenDialog(null)}
+        credentialType={openDialog}
+        onSubmit={(value) => handleUpdate(openDialog!, value)}
+      />
     </div>
   );
 }

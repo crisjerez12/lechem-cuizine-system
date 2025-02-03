@@ -68,3 +68,17 @@ export async function logout(): Promise<AuthResponse> {
     };
   }
 }
+export async function getUserInfo() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  const userData = user?.user_metadata.display_name || "Not Set";
+  if (error)
+    return {
+      success: false,
+      data: "User",
+    };
+  return { success: true, data: userData };
+}
