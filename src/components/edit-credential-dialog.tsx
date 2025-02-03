@@ -34,6 +34,9 @@ export function EditCredentialDialog({
     setIsSubmitting(true);
     try {
       await onSubmit(value);
+      if (credentialType === "email") {
+        toast.success(`Please confirm the change email process first`);
+      }
       toast.success(`${credentialType} updated successfully.`);
       setValue("");
       onOpenChange(false);
