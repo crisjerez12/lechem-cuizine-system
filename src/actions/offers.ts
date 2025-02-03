@@ -2,7 +2,6 @@
 
 import supabase from "@/lib/supabase";
 import type { CateringItem } from "@/lib/types/cateringType";
-import { createClient } from "@/utils/supabase/server";
 import { fileTypeFromBuffer } from "file-type";
 
 async function getFileExtension(base64String: string): Promise<string> {
@@ -75,50 +74,21 @@ export async function addCateringItem(data: Omit<CateringItem, "id">) {
 
 export async function updateCateringItem(
   id: string,
-  data: Partial<CateringItem>
+  restData: Partial<CateringItem>
 ) {
-  const supabase = await createClient();
+  const { image, ...rest } = restData;
 
-  const { image, ...rest } = data;
-  const { data: updatedItem, error } = await supabase
+  const { data, error } = await supabase
     .from("packages")
-    .update(rest)
+    .update({ ...rest })
     .eq("id", id)
-    .select()
-    .single();
+    .select();
+  if (error)
+    return {
+      success: true,
+    };
 
-  if (error) throw error;
-
-  if (image) {
-    const extension = await getFileExtension(image);
-    const fileName = `${id}.${extension}`;
-    const buffer = await base64ToBuffer(image);
-
-    const { error: uploadError } = await supabase.storage
-      .from("offers-image")
-      .upload(fileName, buffer, {
-        contentType: `image/${extension}`,
-        upsert: true,
-      });
-
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      throw uploadError;
-    }
-
-    const signedUrl = await getSignedUrl(fileName);
-
-    const { error: updateError } = await supabase
-      .from("packages")
-      .update({ image: signedUrl })
-      .eq("id", id);
-
-    if (updateError) throw updateError;
-
-    updatedItem.image = signedUrl;
-  }
-
-  return { success: true, item: updatedItem };
+  return { success: true };
 }
 
 export async function deleteCateringItem(id: string) {

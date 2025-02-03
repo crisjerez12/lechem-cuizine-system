@@ -120,11 +120,6 @@ export default function Packages() {
         selectedPackage
       );
       if (result.success) {
-        setPackages(
-          packages.map((pkg) =>
-            pkg.id === selectedPackage.id ? result.item : pkg
-          )
-        );
         setShowEditDialog(false);
         setSelectedPackage(null);
         toast.success("Package updated successfully");
