@@ -109,7 +109,7 @@ export default function Dashboard() {
       {/* Reservations Chart */}
       <Card className="bg-white/70 backdrop-blur-lg p-6">
         <CardHeader>
-          <CardTitle>Online Reservation Trends</CardTitle>
+          <CardTitle>Monthly Reservation Forecast</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[400px] w-full">

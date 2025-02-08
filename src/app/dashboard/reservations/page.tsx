@@ -211,8 +211,8 @@ export default function Reservations() {
                   {...register("mobile_number")}
                   type="number"
                   defaultValue={selectedReservation?.mobile_number || "639"}
-                  max={6399999999999}
-                  min={6390000000000}
+                  max={639999999999}
+                  min={639000000000}
                   pattern="\63[0-9]{9}"
                   placeholder="639XXXXXXXXX"
                 />

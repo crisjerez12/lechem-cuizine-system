@@ -51,7 +51,7 @@ export function Header({ isOpen, setIsOpen }: HeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
         <h1 className="text-xl font-semibold text-gray-800">
-          {getPageTitle(pathname)}
+          {getPageTitle(pathname)==="Online"?"Pending Reservations":getPageTitle(pathname)}
         </h1>
       </div>
 

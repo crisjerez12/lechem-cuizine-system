@@ -3,7 +3,6 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  UtensilsCrossed,
   LayoutDashboard,
   Globe,
   CalendarDays,
@@ -17,7 +16,7 @@ import Image from "next/image";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Overview", href: "/dashboard" },
-  { icon: Globe, label: "Online", href: "/dashboard/online" },
+  { icon: Globe, label: "Pending", href: "/dashboard/online" },
   {
     icon: BookOpenCheck,
     label: "Reservations",
