@@ -4,11 +4,18 @@ import { createClient } from "./utils/supabase/server";
 
 export default async function middleware(req: NextRequest) {
   const supabase = await createClient();
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
   // Check if user is authenticated
-  const isAuthenticated = !sessionError && !userError && user !== null && session !== null;
+  const isAuthenticated =
+    !sessionError && !userError && user !== null && session !== null;
 
   // Protected routes - redirect to home if not authenticated
   if (!isAuthenticated && req.nextUrl.pathname.startsWith("/dashboard")) {

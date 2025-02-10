@@ -23,7 +23,7 @@ const menuItems = [
     href: "/dashboard/reservations",
   },
   { icon: CalendarDays, label: "Calendar", href: "/dashboard/calendar" },
-  { icon: Tag, label: "Offers", href: "/dashboard/offers" },
+  { icon: Tag, label: "Packages", href: "/dashboard/package" },
   { icon: UserCircle2, label: "Account", href: "/dashboard/account" },
 ];
 
