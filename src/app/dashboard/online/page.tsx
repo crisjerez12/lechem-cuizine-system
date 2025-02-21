@@ -229,6 +229,10 @@ export default function Online() {
                 <h4 className="font-semibold">Allergies/Notes:</h4>
                 <p>{selectedReservation.notes}</p>
               </div>
+              <div>
+                <h4 className="font-semibold">Food Choices:</h4>
+                <p>{selectedReservation.choices}</p>
+              </div>
             </div>
           )}
         </DialogContent>

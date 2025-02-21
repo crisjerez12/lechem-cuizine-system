@@ -297,7 +297,6 @@ export default function Reservations() {
                 )}
               </div>
             </div>
-
             <div className="space-y-2">
               <label className="text-sm font-medium">Notes</label>
               <textarea
@@ -309,7 +308,17 @@ export default function Reservations() {
                 <p className="text-sm text-red-500">{errors.notes.message}</p>
               )}
             </div>
-
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Food Choices</label>
+              <textarea
+                {...register("choices")}
+                defaultValue={selectedReservation?.choices}
+                className="w-full h-24 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              {errors.notes && (
+                <p className="text-sm text-red-500">{errors.notes.message}</p>
+              )}
+            </div>
             <div className="flex justify-end gap-4 mt-6">
               <Button
                 type="button"
@@ -513,6 +522,10 @@ export default function Reservations() {
               <div>
                 <h4 className="font-semibold">Allergies/Notes:</h4>
                 <p>{selectedReservation.notes}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold">Food Choices:</h4>
+                <p>{selectedReservation.choices}</p>
               </div>
             </div>
           )}
