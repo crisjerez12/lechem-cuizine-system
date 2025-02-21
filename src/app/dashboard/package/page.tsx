@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -252,7 +254,8 @@ export default function Packages() {
               {selectedPackage?.title} Inclusions
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          {/* Replace the existing content with this scrollable version */}
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
             <div>
               <h3 className="font-bold mb-2">Attributes:</h3>
               <ul className="list-disc pl-5 space-y-1">
