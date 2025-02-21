@@ -317,14 +317,14 @@ export default function Packages() {
           }
         }}
       >
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {showAddDialog ? "Add New Package" : "Edit Package"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 ">
+            <div className="space-y-4 ">
               <div>
                 <label
                   htmlFor="image-upload"
