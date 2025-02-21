@@ -16,6 +16,18 @@ import { toast } from "sonner";
 import { getCalendarData } from "@/actions/calendar";
 import type { DateType } from "@/lib/types/calendar";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+type Reservation = {
+  reservation_date: Date;
+  name: string;
+  location: string;
+};
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -23,7 +35,9 @@ export default function Calendar() {
     {}
   );
   const [isLoading, setIsLoading] = useState(true);
-  const [reservationDates, setReservationDates] = useState<Date[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const daysInMonth = useMemo(() => {
     const start = startOfMonth(currentDate);
@@ -35,13 +49,14 @@ export default function Calendar() {
     setIsLoading(true);
     try {
       const data = await getCalendarData();
-      setReservationDates(data);
+      setReservations(data);
 
       const statuses: Record<string, DateType> = {};
       daysInMonth.forEach((date) => {
         const dateStr = format(date, "yyyy-MM-dd");
         const reservationsCount = data.filter(
-          (reservationDate) => format(reservationDate, "yyyy-MM-dd") === dateStr
+          (reservation) =>
+            format(reservation.reservation_date, "yyyy-MM-dd") === dateStr
         ).length;
         statuses[dateStr] = {
           date: dateStr,
@@ -49,7 +64,6 @@ export default function Calendar() {
           reservationsCount,
         };
       });
-      console.log(statuses);
       setDateStatuses(statuses);
     } catch (error) {
       console.error(error);
@@ -70,6 +84,22 @@ export default function Calendar() {
   const handleNextMonth = () => {
     setCurrentDate((prev) => addMonths(prev, 1));
   };
+
+  const handleDateClick = (dateStr: string) => {
+    const status = dateStatuses[dateStr];
+    if (status && status.reservationsCount > 0) {
+      setSelectedDate(dateStr);
+      setIsDialogOpen(true);
+    }
+  };
+
+  const selectedReservations = useMemo(() => {
+    if (!selectedDate) return [];
+    return reservations.filter(
+      (reservation) =>
+        format(reservation.reservation_date, "yyyy-MM-dd") === selectedDate
+    );
+  }, [selectedDate, reservations]);
 
   return (
     <div className="space-y-6">
@@ -100,7 +130,7 @@ export default function Calendar() {
               <Card
                 key={dateStr}
                 className={cn(
-                  "transition-all duration-200 ",
+                  "transition-all duration-200 cursor-pointer",
                   date < new Date() && "opacity-20",
                   isClosed
                     ? "bg-red-600 text-white"
@@ -108,6 +138,7 @@ export default function Calendar() {
                     ? "bg-orange-600 text-white"
                     : "bg-emerald-600 text-white"
                 )}
+                onClick={() => handleDateClick(dateStr)}
               >
                 <CardHeader className="p-2 bg-muted">
                   <div className="text-sm font-semibold text-muted-foreground text-black ">
@@ -135,6 +166,26 @@ export default function Calendar() {
           })}
         </div>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reservations for {selectedDate}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            {selectedReservations.map((reservation, index) => (
+              <div key={index} className="mb-2 p-2 bg-muted rounded-md">
+                <p>
+                  <strong>Name:</strong> {reservation.name}
+                </p>
+                <p>
+                  <strong>Location:</strong> {reservation.location}
+                </p>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
