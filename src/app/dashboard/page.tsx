@@ -37,7 +37,7 @@ const months = [
 export default function Dashboard() {
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const currentMonth = months[new Date().getMonth() - 1];
+  const currentMonth = months[new Date().getMonth()];
   const [stats, setStats] = useState({
     monthlySales: 0,
     onlineReservations: 0,
