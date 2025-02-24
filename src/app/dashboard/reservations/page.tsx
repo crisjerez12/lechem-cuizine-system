@@ -183,7 +183,7 @@ export default function Reservations() {
           isEdit ? setShowEditDialog(open) : setShowAddDialog(open);
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[60vh] overflow-y-scroll">
           <DialogHeader>
             <DialogTitle>
               {isEdit ? "Edit Reservation" : "Add New Reservation"}
